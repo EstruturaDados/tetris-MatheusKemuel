@@ -1,11 +1,8 @@
-//DESAFIO TETRIS NIVEL NOVATO
-
-
+// DESAFIO TETRIS NIVEL AVENTUREIRO
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-
 
 typedef struct
 {
@@ -14,6 +11,7 @@ typedef struct
 } Peca;
 
 #define MAX 5
+#define MAX_PILHA 3
 
 typedef struct
 {
@@ -22,6 +20,12 @@ typedef struct
     int fim;
     int total;
 } Fila;
+
+typedef struct
+{
+    Peca itens[MAX_PILHA];
+    int topo;
+} Pilha;
 
 void inicializarFila(Fila *f)
 {
@@ -76,7 +80,8 @@ void mostrarFila(Fila *f)
     printf("\n");
 }
 
-Peca gerarPeca() {
+Peca gerarPeca()
+{
     static int proximoId = 0;
 
     char tipos[] = {'I', 'O', 'T', 'L'};
@@ -88,15 +93,105 @@ Peca gerarPeca() {
     return p;
 }
 
+/////////////////////////////////////////////////////////
+
+void inicializarPilha(Pilha *p) {
+    p->topo = -1;
+}
+
+int pilhaCheia(Pilha *p) {
+    return p->topo == MAX_PILHA - 1;
+}
+
+int pilhaVazia(Pilha *p) {
+    return p->topo == -1;
+}
+
+void push(Pilha *p, Peca peca) {
+    if (pilhaCheia(p)) {
+        printf("Pilha de reserva cheia!\n");
+        return;
+    }
+    p->topo++;
+    p->itens[p->topo] = peca;
+}
+
+void pop(Pilha *p, Peca *peca) {
+    if (pilhaVazia(p)) {
+        printf("Pilha vazia!\n");
+        return;
+    }
+    *peca = p->itens[p->topo];
+    p->topo--;
+}
+
+void reservarPeca(Fila *f, Pilha *p) {
+    Peca reservada;
+
+    if (filaVazia(f)) {
+        printf("Fila vazia, nao ha peca para reservar.\n");
+        return;
+    }
+
+    if (pilhaCheia(p)) {
+        printf("Pilha de reserva cheia.\n");
+        return;
+    }
+
+    // 1. Remove da fila
+    remover(f, &reservada);
+
+    // 2. Coloca na pilha
+    push(p, reservada);
+
+    // 3. Gera nova peça
+    inserir(f, gerarPeca());
+
+    printf("Peca [%c %d] reservada com sucesso.\n",
+           reservada.nome, reservada.id);
+}
+
+void usarPecaReservada(Pilha *p) {
+    Peca usada;
+
+    if (pilhaVazia(p)) {
+        printf("Nao ha pecas reservadas.\n");
+        return;
+    }
+
+    pop(p, &usada);
+
+    printf("Peca reservada usada: [%c %d]\n",
+           usada.nome, usada.id);
+}
+
+void mostrarPilha(Pilha *p) {
+    printf("Pilha de reserva (Topo -> Base): ");
+    if (pilhaVazia(p)) {
+        printf("vazia");
+    } else {
+        for (int i = p->topo; i >= 0; i--) {
+            printf("[%c, %d]", p->itens[i].nome, p->itens[i].id);
+        }
+    }
+    printf("\n");
+}
+
+
+
+//////////////////////////////////////////////////////////////////
 int main()
 {
-    
+
     Fila f;
+    Pilha p;
     inicializarFila(&f);
-    
+    inicializarPilha(&p);
+
     srand(time(NULL));
 
-    for (int i = 0; i < MAX; i++){
+    for (int i = 0; i < MAX; i++)
+    {
         inserir(&f, gerarPeca());
     }
 
@@ -105,9 +200,15 @@ int main()
     do
     {
         Peca removida;
+
+        printf("\n==========================================\n");
         mostrarFila(&f);
-        printf("1. Inserir Peca.\n");
-        printf("2. Jogar Peca.\n");
+        mostrarPilha(&p);
+        printf("\n==========================================\n");
+
+        printf("1. Jogar Peca.\n");
+        printf("2. Reservar Peca.\n");
+        printf("3. Usar peca reservada.\n");
         printf("0. Sair.\n");
         scanf("%d", &op);
         getchar();
@@ -115,11 +216,14 @@ int main()
         switch (op)
         {
         case 1:
-            inserir(&f,gerarPeca());
+            remover(&f, &removida);
+            inserir(&f, gerarPeca());
             break;
         case 2:
-            remover(&f, &removida);
-            printf("Peca jogada: [%c, %d]\n", removida.nome, removida.id);
+            reservarPeca(&f, &p);
+            break;
+        case 3:
+            usarPecaReservada(&p);
             break;
         case 0:
             printf("Saindo...\n");
