@@ -1,4 +1,4 @@
-// DESAFIO TETRIS NIVEL AVENTUREIRO
+// DESAFIO TETRIS NIVEL MESTRE
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -95,20 +95,25 @@ Peca gerarPeca()
 
 /////////////////////////////////////////////////////////
 
-void inicializarPilha(Pilha *p) {
+void inicializarPilha(Pilha *p)
+{
     p->topo = -1;
 }
 
-int pilhaCheia(Pilha *p) {
+int pilhaCheia(Pilha *p)
+{
     return p->topo == MAX_PILHA - 1;
 }
 
-int pilhaVazia(Pilha *p) {
+int pilhaVazia(Pilha *p)
+{
     return p->topo == -1;
 }
 
-void push(Pilha *p, Peca peca) {
-    if (pilhaCheia(p)) {
+void push(Pilha *p, Peca peca)
+{
+    if (pilhaCheia(p))
+    {
         printf("Pilha de reserva cheia!\n");
         return;
     }
@@ -116,8 +121,10 @@ void push(Pilha *p, Peca peca) {
     p->itens[p->topo] = peca;
 }
 
-void pop(Pilha *p, Peca *peca) {
-    if (pilhaVazia(p)) {
+void pop(Pilha *p, Peca *peca)
+{
+    if (pilhaVazia(p))
+    {
         printf("Pilha vazia!\n");
         return;
     }
@@ -125,15 +132,18 @@ void pop(Pilha *p, Peca *peca) {
     p->topo--;
 }
 
-void reservarPeca(Fila *f, Pilha *p) {
+void reservarPeca(Fila *f, Pilha *p)
+{
     Peca reservada;
 
-    if (filaVazia(f)) {
+    if (filaVazia(f))
+    {
         printf("Fila vazia, nao ha peca para reservar.\n");
         return;
     }
 
-    if (pilhaCheia(p)) {
+    if (pilhaCheia(p))
+    {
         printf("Pilha de reserva cheia.\n");
         return;
     }
@@ -151,10 +161,12 @@ void reservarPeca(Fila *f, Pilha *p) {
            reservada.nome, reservada.id);
 }
 
-void usarPecaReservada(Pilha *p) {
+void usarPecaReservada(Pilha *p)
+{
     Peca usada;
 
-    if (pilhaVazia(p)) {
+    if (pilhaVazia(p))
+    {
         printf("Nao ha pecas reservadas.\n");
         return;
     }
@@ -165,19 +177,101 @@ void usarPecaReservada(Pilha *p) {
            usada.nome, usada.id);
 }
 
-void mostrarPilha(Pilha *p) {
+void mostrarPilha(Pilha *p)
+{
     printf("Pilha de reserva (Topo -> Base): ");
-    if (pilhaVazia(p)) {
+    if (pilhaVazia(p))
+    {
         printf("vazia");
-    } else {
-        for (int i = p->topo; i >= 0; i--) {
+    }
+    else
+    {
+        for (int i = p->topo; i >= 0; i--)
+        {
             printf("[%c, %d]", p->itens[i].nome, p->itens[i].id);
         }
     }
     printf("\n");
 }
 
+void inserirNoInicio(Fila *f, Peca p)
+{
+    if (filaCheia(f))
+    {
+        printf("Fila cheia, nao eh possivel inserir no inicio.\n");
+        return;
+    }
 
+    f->inicio = (f->inicio - 1 + MAX) % MAX;
+    f->itens[f->inicio] = p;
+    f->total++;
+}
+
+
+void trocarPecaAtual(Fila *f, Pilha *p)
+{
+    Peca daFila;
+    Peca daPilha;
+
+    if (filaVazia(f) || pilhaVazia(p))
+    {
+        printf("Nao eh possivel trocar.\n");
+        return;
+    }
+
+    remover(f, &daFila);   // tira da frente da fila
+    pop(p, &daPilha);      // tira do topo da pilha
+
+    inserirNoInicio(f, daPilha); // topo da pilha vai pra FRENTE da fila
+    push(p, daFila);             // frente da fila vai pro TOPO da pilha
+
+    printf("Troca realizada com sucesso.\n");
+}
+
+void trocarTresPecas(Fila *f, Pilha *p)
+{
+    if (f->total < 3)
+    {
+        printf("Fila nao tem 3 pecas suficientes.\n");
+        return;
+    }
+
+    if (p->topo < 2)
+    {
+        printf("Pilha nao tem 3 pecas suficientes.\n");
+        return;
+    }
+
+    Peca filaTemp[3];
+    Peca pilhaTemp[3];
+
+    // Remove 3 da frente da fila
+    for (int i = 0; i < 3; i++)
+    {
+        remover(f, &filaTemp[i]);
+    }
+
+    // Remove 3 do topo da pilha
+    for (int i = 0; i < 3; i++)
+    {
+        pop(p, &pilhaTemp[i]);
+    }
+
+    // Insere as peças da pilha NO INÍCIO da fila
+    // ordem invertida para manter sequência correta
+    for (int i = 2; i >= 0; i--)
+    {
+        inserirNoInicio(f, pilhaTemp[i]);
+    }
+
+    // Empilha as peças da fila na pilha
+    for (int i = 0; i < 3; i++)
+    {
+        push(p, filaTemp[i]);
+    }
+
+    printf("Troca tripla realizada com sucesso.\n");
+}
 
 //////////////////////////////////////////////////////////////////
 int main()
@@ -206,9 +300,11 @@ int main()
         mostrarPilha(&p);
         printf("\n==========================================\n");
 
-        printf("1. Jogar Peca.\n");
-        printf("2. Reservar Peca.\n");
-        printf("3. Usar peca reservada.\n");
+        printf("1. Jogar peca da frente da fila.\n");
+        printf("2. Enviar peca  da fila pra reserva(pilha).\n");
+        printf("3. Usar peca da reserva.\n");
+        printf("4. Trocar peca da frente da fila com o topo da pilha.\n");
+        printf("5. Trocar os 3 primeiros da fila com as 3 pecas da pilha.\n");
         printf("0. Sair.\n");
         scanf("%d", &op);
         getchar();
@@ -224,6 +320,12 @@ int main()
             break;
         case 3:
             usarPecaReservada(&p);
+            break;
+        case 4:
+            trocarPecaAtual(&f, &p);
+            break;
+        case 5:
+            trocarTresPecas(&f, &p);
             break;
         case 0:
             printf("Saindo...\n");
